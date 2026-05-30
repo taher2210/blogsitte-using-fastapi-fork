@@ -3,7 +3,7 @@ from fastapi import HTTPException
 
 from app.models.comment_model import Comment
 from app.models.reaction_model import Reaction
-from app.utils.blog_utils import blog_exists
+from app.utils.blog_client import blog_exists
 
 
 def create_comment(
