@@ -24,6 +24,16 @@ def create_user(db: Session, username, email, password):
             status_code=400,
             detail="Email already registered"
        )
+    
+    existing_username = db.query(User).filter(
+        User.username == user.username
+    ).first()
+
+    if existing_username:
+        raise HTTPException(
+            status_code=400,
+            detail="Username already exists"
+       )
 
     db.add(user)
 
