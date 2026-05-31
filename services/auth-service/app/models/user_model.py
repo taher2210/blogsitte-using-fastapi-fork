@@ -15,7 +15,7 @@ class User(Base):
         default=uuid.uuid4
     )
 
-    username = Column(String, unique=True, nullable=False)
+    username = Column(String, nullable=False)
 
     email = Column(String, unique=True, nullable=False)
 
