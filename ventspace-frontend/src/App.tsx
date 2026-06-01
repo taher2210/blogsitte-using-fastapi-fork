@@ -5,6 +5,11 @@ import {
   Navigate
 } from "react-router-dom";
 
+import {
+  useEffect,
+  useState
+} from "react";
+
 import { Login } from "./components/Login";
 import { Register } from "./components/Register";
 
@@ -15,6 +20,9 @@ import { CreatePost } from "./pages/CreatePost";
 import { PostDetails } from "./pages/PostDetails";
 import { EditPost } from "./pages/EditPost";
 
+import authApi from "./api/auth";
+import blogApi from "./api/blog";
+
 function ProtectedRoute({
   children
 }: {
@@ -22,7 +30,9 @@ function ProtectedRoute({
 }) {
 
   const token =
-    localStorage.getItem("access_token");
+    localStorage.getItem(
+      "access_token"
+    );
 
   if (!token) {
 
@@ -36,6 +46,7 @@ function ProtectedRoute({
   }
 
   return <>{children}</>;
+
 }
 
 function PublicRoute({
@@ -45,7 +56,9 @@ function PublicRoute({
 }) {
 
   const token =
-    localStorage.getItem("access_token");
+    localStorage.getItem(
+      "access_token"
+    );
 
   if (token) {
 
@@ -59,11 +72,127 @@ function PublicRoute({
   }
 
   return <>{children}</>;
+
 }
 
 function App() {
 
+  const [loading, setLoading] =
+    useState(true);
+
+  useEffect(() => {
+
+    const warmUpServices =
+      async () => {
+
+        try {
+
+          const token =
+            localStorage.getItem(
+              "access_token"
+            );
+
+          const requests = [
+
+            blogApi.get(
+              "/posts"
+            )
+
+          ];
+
+          if (token) {
+
+            requests.push(
+              authApi.get(
+                "/auth/me"
+              )
+            );
+
+          }
+
+          await Promise.allSettled(
+            requests
+          );
+
+        } catch (error) {
+
+          console.error(
+            "Warmup failed:",
+            error
+          );
+
+        } finally {
+
+          setLoading(false);
+
+        }
+
+      };
+
+    warmUpServices();
+
+    const interval =
+      setInterval(
+        warmUpServices,
+        10 * 60 * 1000
+      );
+
+    return () =>
+      clearInterval(
+        interval
+      );
+
+  }, []);
+
+  if (loading) {
+
+    return (
+
+      <div
+        className="
+          min-h-screen
+          flex
+          flex-col
+          items-center
+          justify-center
+          bg-black
+          text-white
+          px-6
+          text-center
+        "
+      >
+
+        <h1
+          className="
+            text-3xl
+            font-bold
+            mb-4
+          "
+        >
+          Starting Services...
+        </h1>
+
+        <p
+          className="
+            text-gray-300
+            max-w-lg
+          "
+        >
+          This project runs on free-tier
+          microservices. If the services
+          are asleep, the first visit may
+          take up to a minute while they
+          wake up.
+        </p>
+
+      </div>
+
+    );
+
+  }
+
   return (
+
     <BrowserRouter>
 
       <Routes>
@@ -130,7 +259,9 @@ function App() {
       </Routes>
 
     </BrowserRouter>
+
   );
+
 }
 
 export default App;
