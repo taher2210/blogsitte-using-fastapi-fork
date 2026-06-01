@@ -9,6 +9,7 @@ from app.utils.token import create_access_token
 import os
 from app.models.user_model import User
 
+
 router = APIRouter(
     prefix="/auth",
     tags=["Auth"]
@@ -83,6 +84,23 @@ def refresh_token(payload: dict = Depends(verify_token)):
 
     return {
         "access_token": access_token
+    }
+
+@router.get("/users/{user_id}")
+def get_user(user_id: str, db: Session = Depends(get_db)):
+    user = db.query(User).filter(
+        User.uuid == user_id
+    ).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+
+    return {
+        "id": str(user.uuid),
+        "username": user.username
     }
 
 @router.post("/logout")
