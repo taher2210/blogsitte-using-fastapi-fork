@@ -3,7 +3,9 @@ from fastapi import HTTPException
 
 from app.models.comment_model import Comment
 from app.models.reaction_model import Reaction
+
 from app.utils.blog_client import blog_exists
+from app.utils.user_client import get_username
 
 
 def create_comment(
@@ -12,12 +14,14 @@ def create_comment(
     author_id,
     content
 ):
+
     if not blog_exists(blog_id):
 
         raise HTTPException(
             status_code=404,
             detail="Blog not found"
         )
+
     comment = Comment(
         blog_id=blog_id,
         author_id=author_id,
@@ -50,6 +54,7 @@ def get_comment_by_id(
     ).first()
 
     if not comment:
+
         raise HTTPException(
             status_code=404,
             detail="Comment not found"
@@ -70,12 +75,14 @@ def update_comment(
     ).first()
 
     if not comment:
+
         raise HTTPException(
             status_code=404,
             detail="Comment not found"
         )
 
     if str(comment.author_id) != str(user_id):
+
         raise HTTPException(
             status_code=403,
             detail="Not authorized"
@@ -101,12 +108,14 @@ def delete_comment(
     ).first()
 
     if not comment:
+
         raise HTTPException(
             status_code=404,
             detail="Comment not found"
         )
 
     if str(comment.author_id) != str(user_id):
+
         raise HTTPException(
             status_code=403,
             detail="Not authorized"
@@ -119,6 +128,7 @@ def delete_comment(
     return {
         "message": "Comment deleted"
     }
+
 
 def get_comments_by_blog(
     db: Session,
@@ -150,13 +160,55 @@ def get_comments_by_blog(
         .count()
     )
 
+    enriched_comments = []
+
+    for comment in comments:
+
+        enriched_comments.append({
+
+            "id": str(comment.id),
+
+            "blog_id": str(comment.blog_id),
+
+            "author_id": str(
+                comment.author_id
+            ),
+
+            "username": get_username(
+                str(comment.author_id)
+            ),
+
+            "content": comment.content,
+
+            "created_at":
+                comment.created_at,
+
+            "updated_at":
+                comment.updated_at,
+
+            "parent_comment_id": (
+                str(comment.parent_comment_id)
+                if comment.parent_comment_id
+                else None
+            )
+
+        })
+
     return {
-        "comments": comments,
+
+        "comments": enriched_comments,
+
         "page": page,
+
         "limit": limit,
+
         "total": total_comments,
-        "has_more": offset + limit < total_comments
+
+        "has_more":
+            offset + limit < total_comments
+
     }
+
 
 def create_reply(
     db: Session,
@@ -181,6 +233,7 @@ def create_reply(
 
     return reply
 
+
 def build_comment_tree(comments):
 
     comment_map = {}
@@ -190,38 +243,64 @@ def build_comment_tree(comments):
     for comment in comments:
 
         comment_dict = {
+
             "id": str(comment.id),
+
             "blog_id": str(comment.blog_id),
-            "author_id": str(comment.author_id),
+
+            "author_id": str(
+                comment.author_id
+            ),
+
+            "username": get_username(
+                str(comment.author_id)
+            ),
+
             "content": comment.content,
-            "created_at": comment.created_at,
+
+            "created_at":
+                comment.created_at,
+
             "parent_comment_id": (
                 str(comment.parent_comment_id)
                 if comment.parent_comment_id
                 else None
             ),
+
             "replies": []
+
         }
 
-        comment_map[str(comment.id)] = comment_dict
+        comment_map[
+            str(comment.id)
+        ] = comment_dict
 
     for comment in comments:
 
-        current = comment_map[str(comment.id)]
+        current = comment_map[
+            str(comment.id)
+        ]
 
         if comment.parent_comment_id:
 
             parent = comment_map.get(
-                str(comment.parent_comment_id)
+                str(
+                    comment.parent_comment_id
+                )
             )
 
             if parent:
-                parent["replies"].append(current)
+
+                parent[
+                    "replies"
+                ].append(current)
 
         else:
+
             roots.append(current)
 
     return roots
+
 
 def get_comment_tree_by_blog(
     db: Session,
@@ -233,6 +312,7 @@ def get_comment_tree_by_blog(
     ).all()
 
     return build_comment_tree(comments)
+
 
 def react_to_comment(
     db: Session,
@@ -279,6 +359,7 @@ def react_to_comment(
     return {
         "message": "Reaction added"
     }
+
 
 def get_reaction_counts(
     db: Session,
