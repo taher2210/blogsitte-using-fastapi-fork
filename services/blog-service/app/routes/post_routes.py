@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.database.db import get_db
 
 from app.models.post_model import Post
+from app.models.user_model import User
 
 from app.schemas.post_schema import (
     CreatePost,
@@ -54,7 +55,29 @@ def get_posts(
 
     posts = db.query(Post).all()
 
-    return posts
+    result = []
+
+    for post in posts:
+
+        author = db.query(User).filter(
+            User.uuid == post.user_id
+        ).first()
+
+        result.append({
+            "id": str(post.id),
+            "user_id": str(post.user_id),
+            "username": (
+                author.username
+                if author
+                else "Unknown"
+            ),
+            "title": post.title,
+            "content": post.content,
+            "created_at": post.created_at,
+            "updated_at": post.updated_at
+        })
+
+    return result
 
 
 @router.get("/{post_id}")
@@ -74,7 +97,23 @@ def get_post(
             detail="Post not found"
         )
 
-    return post
+    author = db.query(User).filter(
+        User.uuid == post.user_id
+    ).first()
+
+    return {
+        "id": str(post.id),
+        "user_id": str(post.user_id),
+        "username": (
+            author.username
+            if author
+            else "Unknown"
+        ),
+        "title": post.title,
+        "content": post.content,
+        "created_at": post.created_at,
+        "updated_at": post.updated_at
+    }
 
 
 @router.put("/{post_id}")
